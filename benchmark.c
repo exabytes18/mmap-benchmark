@@ -304,14 +304,20 @@ static int create_uncached_initialized_file(const char *path, int additional_fla
 
     long page_size = sysconf(_SC_PAGE_SIZE);
     size_t buf_size = length >= 1024*1024 ? 1024*1024 : page_size;
-    char buf[buf_size];
-    for(size_t i = 0; i < sizeof(buf); i++) {
-        buf[i] = (char)i;
+    
+    void *buf;
+    if(posix_memalign(&buf, page_size, buf_size) != 0) {
+        perror("failed to allocate buffer");
+        return -1;
+    }
+
+    for(size_t i = 0; i < buf_size; i++) {
+        ((char *)buf)[i] = (char)i;
     }
 
     size_t bytes_remaining = length;
     while(bytes_remaining > 0) {
-        size_t bytes_to_write = bytes_remaining > sizeof(buf) ? sizeof(buf) : bytes_remaining;
+        size_t bytes_to_write = bytes_remaining > buf_size ? buf_size : bytes_remaining;
         ssize_t bytes_written = write(fd, buf, bytes_to_write);
         if(bytes_written == -1) {
             perror("problem writing bytes to file");
@@ -322,6 +328,7 @@ static int create_uncached_initialized_file(const char *path, int additional_fla
     }
 
     close(fd);
+    free(buf);
 
     fd = open(path, O_RDWR | additional_flags, mode);
     if(fd == -1) {
