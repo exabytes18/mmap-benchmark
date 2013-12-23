@@ -17,7 +17,6 @@
 
 // Notes:
 //   - Looks like scheduler=noop and rotational=0, by default with no alternatives to test
-//   - We need to create a new file for each test, otherwise fs caches will screw with us.
 //   - "mount /something /somewhere"
 //   - install xfs: "yum install xfsprogs"
 //   - format and mount drive: mkfs.xfs /dev/xvdb; mkdir /mnt/disk1; mount /dev/xvdb /mnt/disk1
@@ -88,11 +87,13 @@ static void log_measurement(test_size_t test_size, file_flags_t file_flags, char
     elapsed_time_us += 1000000l * (end->tv_sec - start->tv_sec);
 
     // Use printf here only; all other output should go to stderr.
-    double bytes_per_second = (bytes / (elapsed_time_us/1e6));
-    printf("%ld,%ld,%s,%s,%d,%ld,%lf,%lf\n", test_size.file_size, test_size.page_accesses, file_flags.desc, desc, MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES, bytes, elapsed_time_us/1e6, bytes_per_second);
+    double time_in_seconds = elapsed_time_us / 1e6;
+    double bytes_per_second = bytes / time_in_seconds;
+    double pages_per_second = MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES / time_in_seconds;
+    printf("%ld,%ld,%s,%s,%d,%ld,%lf,%lf,%lf\n", test_size.file_size, test_size.page_accesses, file_flags.desc, desc, MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES, bytes, time_in_seconds, bytes_per_second, pages_per_second);
 
     // Dump some more human friendly metrics to stderr
-    fprintf(stderr, "  %.1lf complete (%.3lf MBps)\n", percent_complete, bytes_per_second / 1024 / 1024);
+    fprintf(stderr, "  %5.1lf complete (%9.3lf MBps, %10.1lf pages/sec)\n", percent_complete, bytes_per_second / 1024 / 1024, pages_per_second);
 }
 
 
