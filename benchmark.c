@@ -307,7 +307,7 @@ static int create_uncached_initialized_file(const char *path, int additional_fla
 
     long page_size = sysconf(_SC_PAGE_SIZE);
     size_t buf_size = length >= 1024*1024 ? 1024*1024 : page_size;
-    
+
     void *buf;
     if(posix_memalign(&buf, page_size, buf_size) != 0) {
         perror("failed to allocate buffer");
