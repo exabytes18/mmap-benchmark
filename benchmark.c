@@ -32,6 +32,9 @@
 //   - single ephemeral, RAID ephemeral, EBS, EBS-Optimized
 //   - HDD vs SSD
 //   - MAP_HUGETLB, MAP_POPULATE, ... ?
+//   - current benchmark is single threaded, which means there's at most one
+//     outstanding disk operation; how many operations can SSDs dispatch
+//     simultaneously? How many threads do we need to get there?
 
 // questions:
 //   - what happens with the mmap when there are IO errors?
