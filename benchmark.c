@@ -325,6 +325,7 @@ static int create_uncached_initialized_file(const char *path, int additional_fla
         if(bytes_written == -1) {
             perror("problem writing bytes to file");
             close(fd);
+            free(buf);
             return -1;
         }
         bytes_remaining -= bytes_written;
