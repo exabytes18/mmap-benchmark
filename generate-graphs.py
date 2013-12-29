@@ -102,6 +102,7 @@ def generate_graph(test_desc_tuple, data_by_flags):
     #ax2.set_ylabel('sin', color='r')
     #for tl in ax2.get_yticklabels():
     #    tl.set_color('r')
+    plt.tight_layout()
     plt.show()
 
 
