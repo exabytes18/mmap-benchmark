@@ -1,3 +1,9 @@
+benchmarks/*.bin
+benchmarks/*.o
+benchmarks/random-access-benchmark
+benchmarks/sequential-access-benchmark
+benchmarks/output.csv
+
 experiments/benchmark
 experiments/benchmark.bin
 experiments/hugetlb
