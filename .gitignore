@@ -1,4 +1,4 @@
-benchmark
-benchmark.bin
-hugetlb
-hugetlb.bin
+experiments/benchmark
+experiments/benchmark.bin
+experiments/hugetlb
+experiments/hugetlb.bin
