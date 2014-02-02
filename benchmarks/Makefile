@@ -1,5 +1,5 @@
 CC:=gcc
-OPTS:=-pedantic -Wall -Wextra -std=c99
+OPTS:=-pedantic -Wall -Wextra -O3 -std=c99
 
 all: sequential-access-benchmark random-access-benchmark
 
