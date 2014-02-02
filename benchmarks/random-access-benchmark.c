@@ -1,4 +1,5 @@
 #include "bq.h"
+#include "results.h"
 #include "shared.h"
 
 #include <pthread.h>
@@ -11,7 +12,7 @@
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES (16384)
-#define PAGES_PER_CHUNK (256)
+#define PAGES_PER_CHUNK (512)
 #define CHUNK_QUEUE_SIZE (1024)
 
 
@@ -33,7 +34,9 @@ typedef struct {
 
 typedef struct {
     bq_t *bq;
+    results_t *results;
 } thread_params_t;
+
 
 advice_t advice[] = {
     {POSIX_MADV_NORMAL, "POSIX_MADV_NORMAL"},
@@ -50,6 +53,45 @@ static function_t functions[] = {
     {random_writes_benchmark, "random_writes"},
     {random_reads_benchmark, "random_reads"},
 };
+
+
+// From http://stackoverflow.com/a/2999130
+static int rand_lim(int limit) {
+    int divisor = RAND_MAX/(limit+1);
+    int retval;
+
+    do {
+        retval = rand() / divisor;
+    } while(retval > limit);
+
+    return retval;
+}
+
+
+static void **random_page_addresses(void *mem, size_t length) {
+    long page_size = sysconf(_SC_PAGE_SIZE);
+
+    size_t num_pages = length / page_size;
+    void **random_pages = malloc(num_pages * sizeof(random_pages[0]));
+    if(random_pages == NULL) {
+        return NULL;
+    }
+
+    for(size_t i = 0; i < num_pages; i++) {
+        random_pages[i] = (char *)mem + i * page_size;
+    }
+
+    for(size_t i = 0; i < num_pages; i++) {
+        size_t r = i + rand_lim(num_pages - i - 1);
+        if(i != r) {
+            void *t = random_pages[i];
+            random_pages[i] = random_pages[r];
+            random_pages[r] = t;
+        }
+    }
+
+    return random_pages;
+}
 
 
 static int chunkify(void *mem, size_t length, chunks_t **chunks) {
@@ -112,9 +154,11 @@ static int enqueue_chunks(bq_t *bq, chunks_t *chunks) {
 static void *random_writes_thread(void *ptr) {
     thread_params_t *params = ptr;
     bq_t *bq = params->bq;
+    results_t *results = params->results;
 
     long page_size = sysconf(_SC_PAGE_SIZE);
     char buf[page_size];
+    memset(buf, 0, page_size);
 
     chunk_t *chunk;
     while(bq_dequeue(bq, (void **)&chunk) == 0) {
@@ -128,7 +172,7 @@ static void *random_writes_thread(void *ptr) {
         }
         gettimeofday(&end, NULL);
 
-        // TODO: log (start, end, bytes_copied, chunk->num_pages)
+        results_log(results, &start, &end, bytes_copied, chunk->num_pages);
     }
 
     return NULL;
@@ -138,6 +182,7 @@ static void *random_writes_thread(void *ptr) {
 static void *random_reads_thread(void *ptr) {
     thread_params_t *params = ptr;
     bq_t *bq = params->bq;
+    results_t *results = params->results;
 
     long page_size = sysconf(_SC_PAGE_SIZE);
     char buf[page_size];
@@ -154,7 +199,7 @@ static void *random_reads_thread(void *ptr) {
         }
         gettimeofday(&end, NULL);
 
-        // TODO: log (start, end, bytes_copied, chunk->num_pages)
+        results_log(results, &start, &end, bytes_copied, chunk->num_pages);
     }
 
     return NULL;
@@ -173,15 +218,24 @@ static int run_threaded_benchmark(void *mem, size_t length, int num_passes, int 
         return 1;
     }
 
+    results_t *results;
+    if(results_init(&results, MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES, length, num_passes, num_threads, advice.desc, desc) != 0) {
+        bq_destroy(bq);
+        free_chunks(chunks);
+        return 1;
+    }
+
     // Setup the thread params
     thread_params_t *thread_params = malloc(sizeof(thread_params[0]) * num_threads);
     if(thread_params == NULL) {
-        free_chunks(chunks);
         bq_destroy(bq);
+        free_chunks(chunks);
+        results_destroy(results);
         return 1;
     }
     for(int i = 0; i < num_threads; i++) {
         thread_params[i].bq = bq;
+        thread_params[i].results = results;
     }
 
     // Initialize and start our threads
@@ -197,6 +251,7 @@ static int run_threaded_benchmark(void *mem, size_t length, int num_passes, int 
             }
             bq_destroy(bq);
             free_chunks(chunks);
+            results_destroy(results);
             free(thread_params);
             return 1;
         }
@@ -219,8 +274,13 @@ static int run_threaded_benchmark(void *mem, size_t length, int num_passes, int 
         }
     }
 
+    if(results_finished(results) != 0) {
+        ret = 1;
+    }
+
     bq_destroy(bq);
     free_chunks(chunks);
+    results_destroy(results);
     free(thread_params);
     return ret;
 }

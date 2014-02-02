@@ -11,59 +11,6 @@
 #include <unistd.h>
 
 
-// From http://stackoverflow.com/a/2999130
-static int rand_lim(int limit) {
-    int divisor = RAND_MAX/(limit+1);
-    int retval;
-
-    do {
-        retval = rand() / divisor;
-    } while(retval > limit);
-
-    return retval;
-}
-
-
-void **random_page_addresses(void *mem, size_t length) {
-    long page_size = sysconf(_SC_PAGE_SIZE);
-
-    size_t num_pages = length / page_size;
-    void **random_pages = malloc(num_pages * sizeof(random_pages[0]));
-    if(random_pages == NULL) {
-        return NULL;
-    }
-
-    for(size_t i = 0; i < num_pages; i++) {
-        random_pages[i] = (char *)mem + i * page_size;
-    }
-
-    for(size_t i = 0; i < num_pages; i++) {
-        size_t r = i + rand_lim(num_pages - i - 1);
-        if(i != r) {
-            void *t = random_pages[i];
-            random_pages[i] = random_pages[r];
-            random_pages[r] = t;
-        }
-    }
-
-    return random_pages;
-}
-
-
-void log_measurement(size_t test_file_size, size_t test_num_page_accesses, int num_threads, char *mmap_options, char *desc, struct timeval *start, struct timeval *end, size_t bytes, size_t total_bytes_copied, double percent_complete) {
-    time_t elapsed_time_us = end->tv_usec - start->tv_usec;
-    elapsed_time_us += 1000000l * (end->tv_sec - start->tv_sec);
-
-    // Use printf here only; all other output should go to stderr.
-    double time_in_seconds = elapsed_time_us / 1e6;
-    double bytes_per_second = bytes / time_in_seconds;
-    printf("%ld,%ld,%d,%s,%s,%ld,%ld,%lf,%lf\n", test_file_size, test_num_page_accesses, num_threads, mmap_options, desc, total_bytes_copied, bytes, time_in_seconds, bytes_per_second);
-
-    // Dump some more human friendly metrics to stderr
-    fprintf(stderr, "  %5.1lf complete (%9.3lf MBps)\n", percent_complete, bytes_per_second / 1024 / 1024);
-}
-
-
 int create_uncached_initialized_file(const char *path, size_t length) {
     int flags = O_WRONLY | O_CREAT | O_TRUNC;
     mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;

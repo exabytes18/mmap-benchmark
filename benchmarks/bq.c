@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+
 struct _bq_t {
     size_t size;
     size_t num_elements;
@@ -15,6 +16,7 @@ struct _bq_t {
     pthread_mutex_t mutex;
     pthread_cond_t cond;
 };
+
 
 int bq_init(struct _bq_t **bq, size_t size) {
     *bq = malloc(sizeof((*bq)[0]));
@@ -53,6 +55,7 @@ int bq_init(struct _bq_t **bq, size_t size) {
     return 0;
 }
 
+
 int bq_destroy(struct _bq_t *bq) {
     if(pthread_cond_destroy(&(bq->cond)) != 0) {
         perror("Failed to destroy cond variable");
@@ -69,12 +72,14 @@ int bq_destroy(struct _bq_t *bq) {
     return 0;
 }
 
+
 void bq_finished(struct _bq_t *bq) {
     pthread_mutex_lock(&(bq->mutex));
     bq->finished = 1;
     pthread_cond_broadcast(&(bq->cond));
     pthread_mutex_unlock(&(bq->mutex));
 }
+
 
 int bq_enqueue(struct _bq_t *bq, void *ptr) {
     pthread_mutex_lock(&(bq->mutex));
@@ -91,6 +96,7 @@ int bq_enqueue(struct _bq_t *bq, void *ptr) {
     pthread_mutex_unlock(&(bq->mutex));
     return 0;
 }
+
 
 int bq_dequeue(struct _bq_t *bq, void **ptr) {
     pthread_mutex_lock(&(bq->mutex));
