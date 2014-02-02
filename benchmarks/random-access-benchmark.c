@@ -1,6 +1,6 @@
+#include "shared.h"
 #include "bq.h"
 #include "results.h"
-#include "shared.h"
 
 #include <pthread.h>
 #include <stdlib.h>

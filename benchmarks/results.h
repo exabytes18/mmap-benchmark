@@ -1,6 +1,8 @@
 #ifndef __results_H
 #define __results_H
 
+#include "shared.h"
+
 #include <stddef.h>
 #include <sys/time.h>
 

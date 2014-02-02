@@ -1,6 +1,8 @@
 #ifndef __BQ_H
 #define __BQ_H
 
+#include "shared.h"
+
 #include <stddef.h>
 
 

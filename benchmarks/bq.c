@@ -1,3 +1,4 @@
+#include "shared.h"
 #include "bq.h"
 
 #include <errno.h>
