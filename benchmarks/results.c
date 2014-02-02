@@ -28,6 +28,7 @@ struct _results_t {
 
 
 static void results_print(struct _results_t *results) {
+    double pages_per_second = results->pages_accessed_since_last_print / results->seconds_consumed_since_last_print;
     double bytes_per_second = results->bytes_copied_since_last_print / results->seconds_consumed_since_last_print;
     double percent_complete = (double)results->total_pages_accessed / (double)results->expected_num_page_accesses * 100;
 
@@ -44,7 +45,10 @@ static void results_print(struct _results_t *results) {
            bytes_per_second);
 
     // Dump some more human friendly metrics to stderr
-    fprintf(stderr, "  %5.1lf complete (%9.3lf MBps)\n", percent_complete, bytes_per_second / 1024 / 1024);
+    fprintf(stderr, "  %5.1lf complete (%9.3lf MBps, %10.1lf pages/sec)\n",
+            percent_complete,
+            bytes_per_second / 1024 / 1024,
+            pages_per_second);
 
     results->pages_accessed_since_last_print = 0;
     results->bytes_copied_since_last_print = 0;

@@ -21,9 +21,9 @@ advice_t advice[] = {
     {POSIX_MADV_NORMAL, "POSIX_MADV_NORMAL"},
     {POSIX_MADV_RANDOM, "POSIX_MADV_RANDOM"},
     {POSIX_MADV_SEQUENTIAL, "POSIX_MADV_SEQUENTIAL"},
-    {POSIX_MADV_NORMAL | POSIX_MADV_WILLNEED, "POSIX_MADV_NORMAL | POSIX_MADV_WILLNEED"},
-    {POSIX_MADV_RANDOM | POSIX_MADV_WILLNEED, "POSIX_MADV_RANDOM | POSIX_MADV_WILLNEED"},
-    {POSIX_MADV_SEQUENTIAL | POSIX_MADV_WILLNEED, "POSIX_MADV_SEQUENTIAL | POSIX_MADV_WILLNEED"},
+    {POSIX_MADV_NORMAL | POSIX_MADV_WILLNEED, "POSIX_MADV_NORMAL|POSIX_MADV_WILLNEED"},
+    {POSIX_MADV_RANDOM | POSIX_MADV_WILLNEED, "POSIX_MADV_RANDOM|POSIX_MADV_WILLNEED"},
+    {POSIX_MADV_SEQUENTIAL | POSIX_MADV_WILLNEED, "POSIX_MADV_SEQUENTIAL|POSIX_MADV_WILLNEED"},
 };
 
 static int seq_writes_benchmark(void *mem, size_t length, int num_passes, advice_t advice, char *desc);
@@ -140,7 +140,11 @@ static int seq_reads_benchmark(void *mem, size_t length, int num_passes, advice_
 
 
 static int benchmark0(char *file_name, size_t file_size, int num_passes, advice_t advice, function_t function) {
-    fprintf(stderr, "Running sequential access benchmark: file_size=%ld, num_passes=%d, test=%s\n", file_size, num_passes, function.desc);
+    fprintf(stderr, "Running sequential access benchmark: file_size=%ld, num_passes=%d, test=%s, advice=%s\n",
+            file_size,
+            num_passes,
+            function.desc,
+            advice.desc);
 
     int fd = create_uncached_initialized_file(file_name, file_size);
     if(fd == -1) {
