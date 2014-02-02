@@ -1,5 +1,5 @@
 CC:=gcc
-OPTS:=-pedantic -Wall -Wextra -O3 -std=c99
+OPTS:=-pedantic -Wall -Wextra -std=c99
 
 all: sequential-access-benchmark random-access-benchmark
 
@@ -11,8 +11,8 @@ sequential-access-benchmark: sequential-access-benchmark.o shared.o
 sequential-access-benchmark.o: sequential-access-benchmark.c
 	$(CC) $(OPTS) -c $^
 
-random-access-benchmark: random-access-benchmark.o shared.o
-	$(CC) $(OPTS) -o $@ $^
+random-access-benchmark: random-access-benchmark.o shared.o bq.o
+	$(CC) $(OPTS) -lpthread -o $@ $^
 
 random-access-benchmark.o: random-access-benchmark.c
 	$(CC) $(OPTS) -c $^
@@ -20,5 +20,8 @@ random-access-benchmark.o: random-access-benchmark.c
 shared.o: shared.c
 	$(CC) $(OPTS) -c $^
 
+bq.o: bq.c
+	$(CC) $(OPTS) -c $^
+
 clean:
-	rm -rf sequential-access-benchmark sequential-access-benchmark.o shared.o random-access-benchmark random-access-benchmark.o
+	rm -rf sequential-access-benchmark sequential-access-benchmark.o shared.o random-access-benchmark random-access-benchmark.o bq.o

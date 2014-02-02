@@ -1,10 +1,11 @@
+#include "shared.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include "shared.h"
 
 #define MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES (16384)
 
@@ -14,6 +15,14 @@ typedef struct {
     char *desc;
 } function_t;
 
+advice_t advice[] = {
+    {POSIX_MADV_NORMAL, "POSIX_MADV_NORMAL"},
+    {POSIX_MADV_RANDOM, "POSIX_MADV_RANDOM"},
+    {POSIX_MADV_SEQUENTIAL, "POSIX_MADV_SEQUENTIAL"},
+    {POSIX_MADV_NORMAL | POSIX_MADV_WILLNEED, "POSIX_MADV_NORMAL | POSIX_MADV_WILLNEED"},
+    {POSIX_MADV_RANDOM | POSIX_MADV_WILLNEED, "POSIX_MADV_RANDOM | POSIX_MADV_WILLNEED"},
+    {POSIX_MADV_SEQUENTIAL | POSIX_MADV_WILLNEED, "POSIX_MADV_SEQUENTIAL | POSIX_MADV_WILLNEED"},
+};
 
 static int seq_writes_benchmark(void *mem, size_t length, int num_passes, advice_t advice, char *desc);
 static int seq_reads_benchmark(void *mem, size_t length, int num_passes, advice_t advice, char *desc);
@@ -51,7 +60,7 @@ static int seq_writes_benchmark(void *mem, size_t length, int num_passes, advice
 
             double percent_complete = ((double)i / page_accesses) * 100;
             total_bytes_copied += bytes_copied;
-            log_measurement(length, page_accesses, advice.desc, desc, &start, &end, bytes_copied, total_bytes_copied, percent_complete);
+            log_measurement(length, page_accesses, 1, advice.desc, desc, &start, &end, bytes_copied, total_bytes_copied, percent_complete);
             bytes_copied = 0;
             next_log += MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES;
 
@@ -62,7 +71,7 @@ static int seq_writes_benchmark(void *mem, size_t length, int num_passes, advice
 
     if(bytes_copied != 0) {
         total_bytes_copied += bytes_copied;
-        log_measurement(length, page_accesses, advice.desc, desc, &start, &end, bytes_copied, total_bytes_copied, 100);
+        log_measurement(length, page_accesses, 1, advice.desc, desc, &start, &end, bytes_copied, total_bytes_copied, 100);
     }
 
     return 0;
@@ -102,7 +111,7 @@ static int seq_reads_benchmark(void *mem, size_t length, int num_passes, advice_
 
             double percent_complete = ((double)i / page_accesses) * 100;
             total_bytes_copied += bytes_copied;
-            log_measurement(length, page_accesses, advice.desc, desc, &start, &end, bytes_copied, total_bytes_copied, percent_complete);
+            log_measurement(length, page_accesses, 1, advice.desc, desc, &start, &end, bytes_copied, total_bytes_copied, percent_complete);
             bytes_copied = 0;
             next_log += MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES;
 
@@ -113,7 +122,7 @@ static int seq_reads_benchmark(void *mem, size_t length, int num_passes, advice_
 
     if(bytes_copied != 0) {
         total_bytes_copied += bytes_copied;
-        log_measurement(length, page_accesses, advice.desc, desc, &start, &end, bytes_copied, total_bytes_copied, 100);
+        log_measurement(length, page_accesses, 1, advice.desc, desc, &start, &end, bytes_copied, total_bytes_copied, 100);
     }
 
     return 0;
@@ -135,7 +144,7 @@ static int benchmark0(char *file_name, size_t file_size, int num_passes, advice_
         return 1;
     }
 
-    if(madvise(mem, file_size, advice.advice) != 0) {
+    if(posix_madvise(mem, file_size, advice.advice) != 0) {
         perror("madvice() failed");
         return 1;
     }

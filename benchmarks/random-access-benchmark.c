@@ -1,12 +1,18 @@
+#include "bq.h"
+#include "shared.h"
+
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include "shared.h"
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES (16384)
+#define PAGES_PER_CHUNK (256)
+#define CHUNK_QUEUE_SIZE (1024)
 
 
 typedef struct {
@@ -14,6 +20,29 @@ typedef struct {
     char *desc;
 } function_t;
 
+typedef struct {
+    void **page_indexes;
+    size_t num_pages;
+} chunk_t;
+
+typedef struct {
+    void **page_indexes;
+    chunk_t *chunks;
+    size_t num_chunks;
+} chunks_t;
+
+typedef struct {
+    bq_t *bq;
+} thread_params_t;
+
+advice_t advice[] = {
+    {POSIX_MADV_NORMAL, "POSIX_MADV_NORMAL"},
+    {POSIX_MADV_RANDOM, "POSIX_MADV_RANDOM"},
+    {POSIX_MADV_SEQUENTIAL, "POSIX_MADV_SEQUENTIAL"},
+    {POSIX_MADV_NORMAL | POSIX_MADV_WILLNEED, "POSIX_MADV_NORMAL | POSIX_MADV_WILLNEED"},
+    {POSIX_MADV_RANDOM | POSIX_MADV_WILLNEED, "POSIX_MADV_RANDOM | POSIX_MADV_WILLNEED"},
+    {POSIX_MADV_SEQUENTIAL | POSIX_MADV_WILLNEED, "POSIX_MADV_SEQUENTIAL | POSIX_MADV_WILLNEED"},
+};
 
 static int random_writes_benchmark(void *mem, size_t length, int num_passes, int num_threads, advice_t advice, char *desc);
 static int random_reads_benchmark(void *mem, size_t length, int num_passes, int num_threads, advice_t advice, char *desc);
@@ -23,15 +52,187 @@ static function_t functions[] = {
 };
 
 
-static int random_writes_benchmark(void *mem, size_t length, int num_passes, int num_threads, advice_t advice, char *desc) {
-    // TODO: implement
+static int chunkify(void *mem, size_t length, chunks_t **chunks) {
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    size_t num_pages = length / page_size;
+
+    *chunks = malloc(sizeof((*chunks)[0]));
+    if(*chunks == NULL) {
+        fprintf(stderr, "Failed to malloc chunks struct\n");
+        return 1;
+    }
+
+    (*chunks)->num_chunks = (num_pages / PAGES_PER_CHUNK) + (num_pages % PAGES_PER_CHUNK == 0 ? 0 : 1);
+    (*chunks)->chunks = malloc(sizeof(((*chunks)->chunks)[0]) * ((*chunks)->num_chunks));
+    if((*chunks)->chunks == NULL) {
+        fprintf(stderr, "Failed to malloc chunks array\n");
+        free(*chunks);
+        return 1;
+    }
+
+    (*chunks)->page_indexes = random_page_addresses(mem, length);
+    if((*chunks)->page_indexes == NULL) {
+        fprintf(stderr, "Failed to malloc random pages array\n");
+        free((*chunks)->chunks);
+        free(*chunks);
+        return 1;
+    }
+
+    size_t pages_remaining = num_pages;
+    void **page_indexes = (*chunks)->page_indexes;
+    for(size_t i = 0; i < (*chunks)->num_chunks; i++) {
+        chunk_t *chunk = (*chunks)->chunks + i;
+        chunk->page_indexes = page_indexes;
+        chunk->num_pages = MIN(pages_remaining, PAGES_PER_CHUNK);
+        page_indexes += chunk->num_pages;
+        pages_remaining -= chunk->num_pages;
+    }
     return 0;
 }
 
 
-static int random_reads_benchmark(void *mem, size_t length, int num_passes, int num_threads, advice_t advice, char *desc) {
-    // TODO: implement
+static void free_chunks(chunks_t *chunks) {
+    free(chunks->page_indexes);
+    free(chunks->chunks);
+    free(chunks);
+}
+
+
+static int enqueue_chunks(bq_t *bq, chunks_t *chunks) {
+    for(size_t i = 0; i < chunks->num_chunks; i++) {
+        if(bq_enqueue(bq, chunks->chunks + i) != 0) {
+            fprintf(stderr, "Problem enqueing chunk\n");
+            return 1;
+        }
+    }
     return 0;
+}
+
+
+static void *random_writes_thread(void *ptr) {
+    thread_params_t *params = ptr;
+    bq_t *bq = params->bq;
+
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    char buf[page_size];
+
+    chunk_t *chunk;
+    while(bq_dequeue(bq, (void **)&chunk) == 0) {
+        struct timeval start, end;
+        size_t bytes_copied = 0;
+
+        gettimeofday(&start, NULL);
+        for(size_t i = 0; i < chunk->num_pages; i++) {
+            memcpy(chunk->page_indexes[i], buf, page_size);
+            bytes_copied += page_size;
+        }
+        gettimeofday(&end, NULL);
+
+        // TODO: log (start, end, bytes_copied, chunk->num_pages)
+    }
+
+    return NULL;
+}
+
+
+static void *random_reads_thread(void *ptr) {
+    thread_params_t *params = ptr;
+    bq_t *bq = params->bq;
+
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    char buf[page_size];
+
+    chunk_t *chunk;
+    while(bq_dequeue(bq, (void **)&chunk) == 0) {
+        struct timeval start, end;
+        size_t bytes_copied = 0;
+
+        gettimeofday(&start, NULL);
+        for(size_t i = 0; i < chunk->num_pages; i++) {
+            memcpy(buf, chunk->page_indexes[i], page_size);
+            bytes_copied += page_size;
+        }
+        gettimeofday(&end, NULL);
+
+        // TODO: log (start, end, bytes_copied, chunk->num_pages)
+    }
+
+    return NULL;
+}
+
+
+static int run_threaded_benchmark(void *mem, size_t length, int num_passes, int num_threads, advice_t advice, char *desc, void *(thread_function)(void *)) {
+    bq_t *bq;
+    if(bq_init(&bq, CHUNK_QUEUE_SIZE) != 0) {
+        return 1;
+    }
+
+    chunks_t *chunks;
+    if(chunkify(mem, length, &chunks) != 0) {
+        bq_destroy(bq);
+        return 1;
+    }
+
+    // Setup the thread params
+    thread_params_t *thread_params = malloc(sizeof(thread_params[0]) * num_threads);
+    if(thread_params == NULL) {
+        free_chunks(chunks);
+        bq_destroy(bq);
+        return 1;
+    }
+    for(int i = 0; i < num_threads; i++) {
+        thread_params[i].bq = bq;
+    }
+
+    // Initialize and start our threads
+    pthread_t threads[num_threads];
+    for(int i = 0; i < num_threads; i++) {
+        if(pthread_create(&threads[i], NULL, thread_function, &thread_params[i]) != 0) {
+            perror("Problem creating thread");
+            bq_finished(bq);
+            for(int j = 0; j < i; j++) {
+                if(pthread_join(threads[j], NULL) != 0) {
+                    perror("Problem joining thread");
+                }
+            }
+            bq_destroy(bq);
+            free_chunks(chunks);
+            free(thread_params);
+            return 1;
+        }
+    }
+
+    // Start enqueuing the chunks
+    int ret = 0;
+    for(int pass = 0; pass < num_passes; pass++) {
+        if(enqueue_chunks(bq, chunks) != 0) {
+            ret = 1;
+            break;
+        }
+    }
+    bq_finished(bq);
+
+    // await thread completion
+    for(int i = 0; i < num_threads; i++) {
+        if(pthread_join(threads[i], NULL) != 0) {
+            perror("Problem joining thread");
+        }
+    }
+
+    bq_destroy(bq);
+    free_chunks(chunks);
+    free(thread_params);
+    return ret;
+}
+
+
+static int random_writes_benchmark(void *mem, size_t length, int num_passes, int num_threads, advice_t advice, char *desc) {
+    return run_threaded_benchmark(mem, length, num_passes, num_threads, advice, desc, random_writes_thread);
+}
+
+
+static int random_reads_benchmark(void *mem, size_t length, int num_passes, int num_threads, advice_t advice, char *desc) {
+    return run_threaded_benchmark(mem, length, num_passes, num_threads, advice, desc, random_reads_thread);
 }
 
 
@@ -50,7 +251,7 @@ static int benchmark0(char *file_name, size_t file_size, int num_passes, int num
         return 1;
     }
 
-    if(madvise(mem, file_size, advice.advice) != 0) {
+    if(posix_madvise(mem, file_size, advice.advice) != 0) {
         perror("madvice() failed");
         return 1;
     }
