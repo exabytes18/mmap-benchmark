@@ -174,7 +174,7 @@ static void *random_writes_thread(void *ptr) {
         }
         gettimeofday(&end, NULL);
 
-        results_log(results, &start, &end, bytes_copied, chunk->num_pages);
+        results_log(results, start, end, bytes_copied, chunk->num_pages);
     }
 
     return NULL;
@@ -201,7 +201,7 @@ static void *random_reads_thread(void *ptr) {
         }
         gettimeofday(&end, NULL);
 
-        results_log(results, &start, &end, bytes_copied, chunk->num_pages);
+        results_log(results, start, end, bytes_copied, chunk->num_pages);
     }
 
     return NULL;

@@ -66,7 +66,7 @@ static int seq_writes_benchmark(void *mem, size_t length, int num_passes, advice
         if(i+1 == next_log) {
             gettimeofday(&end, NULL);
 
-            results_log(results, &start, &end, bytes_copied, pages_accessed);
+            results_log(results, start, end, bytes_copied, pages_accessed);
             bytes_copied = 0;
             pages_accessed = 0;
             next_log += MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES;
@@ -77,7 +77,7 @@ static int seq_writes_benchmark(void *mem, size_t length, int num_passes, advice
     gettimeofday(&end, NULL);
 
     if(bytes_copied != 0) {
-        results_log(results, &start, &end, bytes_copied, pages_accessed);
+        results_log(results, start, end, bytes_copied, pages_accessed);
     }
 
     int ret = results_finished(results);
@@ -119,7 +119,7 @@ static int seq_reads_benchmark(void *mem, size_t length, int num_passes, advice_
         if(i+1 == next_log) {
             gettimeofday(&end, NULL);
 
-            results_log(results, &start, &end, bytes_copied, pages_accessed);
+            results_log(results, start, end, bytes_copied, pages_accessed);
             bytes_copied = 0;
             pages_accessed = 0;
             next_log += MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES;
@@ -130,7 +130,7 @@ static int seq_reads_benchmark(void *mem, size_t length, int num_passes, advice_
     gettimeofday(&end, NULL);
 
     if(bytes_copied != 0) {
-        results_log(results, &start, &end, bytes_copied, pages_accessed);
+        results_log(results, start, end, bytes_copied, pages_accessed);
     }
 
     int ret = results_finished(results);

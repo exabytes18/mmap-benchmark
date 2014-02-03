@@ -12,7 +12,7 @@ typedef struct _results_t results_t;
 
 int results_init(results_t **results, size_t print_frequency_in_page_accesses, size_t test_file_size, int num_passes, int num_threads, char *mmap_advice_desc, char *desc);
 
-void results_log(results_t *results, struct timeval *start, struct timeval *end, size_t bytes_copied, size_t num_pages);
+void results_log(results_t *results, struct timeval start, struct timeval end, size_t bytes_copied, size_t num_pages);
 
 int results_finished(struct _results_t *results);
 

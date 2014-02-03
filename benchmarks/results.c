@@ -23,13 +23,19 @@ struct _results_t {
     size_t total_pages_accessed;
     size_t bytes_copied_since_last_print;
     size_t pages_accessed_since_last_print;
-    double seconds_consumed_since_last_print;
+
+    struct timeval start;
+    struct timeval end;
 };
 
 
 static void results_print(struct _results_t *results) {
-    double pages_per_second = results->pages_accessed_since_last_print / results->seconds_consumed_since_last_print;
-    double bytes_per_second = results->bytes_copied_since_last_print / results->seconds_consumed_since_last_print;
+    time_t elapsed_time_us = results->end.tv_usec - results->start.tv_usec;
+    elapsed_time_us += 1000000l * (results->end.tv_sec - results->start.tv_sec);
+
+    double time_in_seconds = elapsed_time_us / 1e6;
+    double pages_per_second = results->pages_accessed_since_last_print / time_in_seconds;
+    double bytes_per_second = results->bytes_copied_since_last_print / time_in_seconds;
     double percent_complete = (double)results->total_pages_accessed / (double)results->expected_num_page_accesses * 100;
 
     // Use printf here only; all other output should go to stderr.
@@ -41,7 +47,7 @@ static void results_print(struct _results_t *results) {
            results->desc,
            results->total_bytes_copied,
            results->bytes_copied_since_last_print,
-           results->seconds_consumed_since_last_print,
+           time_in_seconds,
            bytes_per_second);
 
     // Dump some more human friendly metrics to stderr
@@ -52,7 +58,6 @@ static void results_print(struct _results_t *results) {
 
     results->pages_accessed_since_last_print = 0;
     results->bytes_copied_since_last_print = 0;
-    results->seconds_consumed_since_last_print = 0;
 }
 
 
@@ -84,25 +89,27 @@ int results_init(struct _results_t **results, size_t print_frequency_in_page_acc
     (*results)->total_pages_accessed = 0;
     (*results)->bytes_copied_since_last_print = 0;
     (*results)->pages_accessed_since_last_print = 0;
-    (*results)->seconds_consumed_since_last_print = 0;
     return 0;
 }
 
 
-void results_log(struct _results_t *results, struct timeval *start, struct timeval *end, size_t bytes_copied, size_t num_pages_accessed) {
-    time_t elapsed_time_us = end->tv_usec - start->tv_usec;
-    elapsed_time_us += 1000000l * (end->tv_sec - start->tv_sec);
-
-    // Keep our critical section as small as possible
+void results_log(struct _results_t *results, struct timeval start, struct timeval end, size_t bytes_copied, size_t num_pages_accessed) {
     pthread_mutex_lock(&(results->mutex));
+
+    if(results->pages_accessed_since_last_print == 0) {
+        results->start = start;
+    }
+
     results->total_bytes_copied += bytes_copied;
     results->total_pages_accessed += num_pages_accessed;
     results->bytes_copied_since_last_print += bytes_copied;
     results->pages_accessed_since_last_print += num_pages_accessed;
-    results->seconds_consumed_since_last_print += elapsed_time_us / 1e6;
+    results->end = end;
+
     if(results->pages_accessed_since_last_print >= results->print_frequency_in_page_accesses) {
         results_print(results);
     }
+
     pthread_mutex_unlock(&(results->mutex));
 }
 
