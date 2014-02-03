@@ -69,6 +69,8 @@ static int rand_lim(int limit) {
 
 
 static void **random_page_addresses(void *mem, size_t length) {
+    srand(time(NULL));
+
     long page_size = sysconf(_SC_PAGE_SIZE);
 
     size_t num_pages = length / page_size;
