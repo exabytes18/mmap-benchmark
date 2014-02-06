@@ -1,3 +1,5 @@
+*.png
+
 benchmarks/*.bin
 benchmarks/*.o
 benchmarks/random-access-benchmark
