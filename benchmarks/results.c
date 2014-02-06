@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 
@@ -24,14 +25,14 @@ struct _results_t {
     size_t bytes_copied_since_last_print;
     size_t pages_accessed_since_last_print;
 
-    struct timeval start;
-    struct timeval end;
+    struct timeval prev;
+    struct timeval cur;
 };
 
 
 static void results_print(struct _results_t *results) {
-    time_t elapsed_time_us = results->end.tv_usec - results->start.tv_usec;
-    elapsed_time_us += 1000000l * (results->end.tv_sec - results->start.tv_sec);
+    time_t elapsed_time_us = results->cur.tv_usec - results->prev.tv_usec;
+    elapsed_time_us += 1000000l * (results->cur.tv_sec - results->prev.tv_sec);
 
     double time_in_seconds = elapsed_time_us / 1e6;
     double pages_per_second = results->pages_accessed_since_last_print / time_in_seconds;
@@ -89,25 +90,26 @@ int results_init(struct _results_t **results, size_t print_frequency_in_page_acc
     (*results)->total_pages_accessed = 0;
     (*results)->bytes_copied_since_last_print = 0;
     (*results)->pages_accessed_since_last_print = 0;
+
+    gettimeofday(&(*results)->prev, NULL);
+    gettimeofday(&(*results)->cur, NULL);
+
     return 0;
 }
 
 
-void results_log(struct _results_t *results, struct timeval start, struct timeval end, size_t bytes_copied, size_t num_pages_accessed) {
+void results_log(struct _results_t *results, size_t bytes_copied, size_t num_pages_accessed) {
     pthread_mutex_lock(&(results->mutex));
-
-    if(results->pages_accessed_since_last_print == 0) {
-        results->start = start;
-    }
 
     results->total_bytes_copied += bytes_copied;
     results->total_pages_accessed += num_pages_accessed;
     results->bytes_copied_since_last_print += bytes_copied;
     results->pages_accessed_since_last_print += num_pages_accessed;
-    results->end = end;
 
     if(results->pages_accessed_since_last_print >= results->print_frequency_in_page_accesses) {
+        gettimeofday(&results->cur, NULL);
         results_print(results);
+        results->prev = results->cur;
     }
 
     pthread_mutex_unlock(&(results->mutex));
@@ -116,7 +118,9 @@ void results_log(struct _results_t *results, struct timeval start, struct timeva
 
 int results_finished(struct _results_t *results) {
     if(results->pages_accessed_since_last_print > 0) {
+        gettimeofday(&results->cur, NULL);
         results_print(results);
+        results->prev = results->cur;
     }
 
     if(results->total_pages_accessed != results->expected_num_page_accesses) {

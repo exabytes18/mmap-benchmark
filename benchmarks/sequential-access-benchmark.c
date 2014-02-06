@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/time.h>
 #include <unistd.h>
 
 #define MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES (16384)
@@ -38,7 +37,6 @@ static int seq_writes_benchmark(void *mem, size_t length, int num_passes, advice
     long page_size = sysconf(_SC_PAGE_SIZE);
     char buf[page_size];
 
-    struct timeval start, end;
     size_t next_log = MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES;
     size_t page_accesses = length / page_size * num_passes;
     size_t bytes_copied = 0;
@@ -50,7 +48,6 @@ static int seq_writes_benchmark(void *mem, size_t length, int num_passes, advice
         return 1;
     }
 
-    gettimeofday(&start, NULL);
     for(size_t i = 0; i < page_accesses; i++) {
         memcpy(buf, current_page, page_size);
         bytes_copied += page_size;
@@ -64,20 +61,15 @@ static int seq_writes_benchmark(void *mem, size_t length, int num_passes, advice
 
         // log performance periodically
         if(i+1 == next_log) {
-            gettimeofday(&end, NULL);
-
-            results_log(results, start, end, bytes_copied, pages_accessed);
+            results_log(results, bytes_copied, pages_accessed);
             bytes_copied = 0;
             pages_accessed = 0;
             next_log += MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES;
-
-            gettimeofday(&start, NULL);
         }
     }
-    gettimeofday(&end, NULL);
 
     if(bytes_copied != 0) {
-        results_log(results, start, end, bytes_copied, pages_accessed);
+        results_log(results, bytes_copied, pages_accessed);
     }
 
     int ret = results_finished(results);
@@ -91,7 +83,6 @@ static int seq_reads_benchmark(void *mem, size_t length, int num_passes, advice_
     char buf[page_size];
     memset(buf, 0, page_size);
 
-    struct timeval start, end;
     size_t next_log = MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES;
     size_t page_accesses = length / page_size * num_passes;
     size_t bytes_copied = 0;
@@ -103,7 +94,6 @@ static int seq_reads_benchmark(void *mem, size_t length, int num_passes, advice_
         return 1;
     }
 
-    gettimeofday(&start, NULL);
     for(size_t i = 0; i < page_accesses; i++) {
         memcpy(current_page, buf, page_size);
         bytes_copied += page_size;
@@ -117,20 +107,15 @@ static int seq_reads_benchmark(void *mem, size_t length, int num_passes, advice_
 
         // log performance periodically
         if(i+1 == next_log) {
-            gettimeofday(&end, NULL);
-
-            results_log(results, start, end, bytes_copied, pages_accessed);
+            results_log(results, bytes_copied, pages_accessed);
             bytes_copied = 0;
             pages_accessed = 0;
             next_log += MEASUREMENT_FREQUENCY_IN_PAGE_ACCESSES;
-
-            gettimeofday(&start, NULL);
         }
     }
-    gettimeofday(&end, NULL);
 
     if(bytes_copied != 0) {
-        results_log(results, start, end, bytes_copied, pages_accessed);
+        results_log(results, bytes_copied, pages_accessed);
     }
 
     int ret = results_finished(results);

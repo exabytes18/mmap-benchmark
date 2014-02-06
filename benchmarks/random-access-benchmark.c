@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/time.h>
 #include <unistd.h>
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -164,17 +163,14 @@ static void *random_writes_thread(void *ptr) {
 
     chunk_t *chunk;
     while(bq_dequeue(bq, (void **)&chunk) == 0) {
-        struct timeval start, end;
         size_t bytes_copied = 0;
 
-        gettimeofday(&start, NULL);
         for(size_t i = 0; i < chunk->num_pages; i++) {
             memcpy(chunk->page_indexes[i], buf, page_size);
             bytes_copied += page_size;
         }
-        gettimeofday(&end, NULL);
 
-        results_log(results, start, end, bytes_copied, chunk->num_pages);
+        results_log(results, bytes_copied, chunk->num_pages);
     }
 
     return NULL;
@@ -191,17 +187,14 @@ static void *random_reads_thread(void *ptr) {
 
     chunk_t *chunk;
     while(bq_dequeue(bq, (void **)&chunk) == 0) {
-        struct timeval start, end;
         size_t bytes_copied = 0;
 
-        gettimeofday(&start, NULL);
         for(size_t i = 0; i < chunk->num_pages; i++) {
             memcpy(buf, chunk->page_indexes[i], page_size);
             bytes_copied += page_size;
         }
-        gettimeofday(&end, NULL);
 
-        results_log(results, start, end, bytes_copied, chunk->num_pages);
+        results_log(results, bytes_copied, chunk->num_pages);
     }
 
     return NULL;
