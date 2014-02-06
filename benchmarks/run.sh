@@ -11,4 +11,4 @@ run() {
 
 > output.csv
 run 1gb 2 >> output.csv
-run 7gb 2 >> output.csv
+run 14gb 2 >> output.csv
