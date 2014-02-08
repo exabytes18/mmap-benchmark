@@ -15,7 +15,8 @@ struct _bq_t {
     void **tail;
     int finished;
     pthread_mutex_t mutex;
-    pthread_cond_t cond;
+    pthread_cond_t notFull;
+    pthread_cond_t notEmpty;
 };
 
 
@@ -39,8 +40,20 @@ int bq_init(struct _bq_t **bq, size_t size) {
         free(*bq);
     }
 
-    if(pthread_cond_init(&((*bq)->cond), NULL) != 0) {
-        perror("Failed to destroy cond variable");
+    if(pthread_cond_init(&((*bq)->notFull), NULL) != 0) {
+        perror("Failed to create notFull cond variable");
+        if(pthread_mutex_destroy(&((*bq)->mutex)) != 0) {
+            perror("Failed to destroy mutex");
+        }
+        free((*bq)->queue);
+        free(*bq);
+    }
+
+    if(pthread_cond_init(&((*bq)->notEmpty), NULL) != 0) {
+        perror("Failed to create notEmpty cond variable");
+        if(pthread_cond_destroy(&((*bq)->notFull)) != 0) {
+            perror("Failed to destroy notFull cond variable");
+        }
         if(pthread_mutex_destroy(&((*bq)->mutex)) != 0) {
             perror("Failed to destroy mutex");
         }
@@ -58,12 +71,17 @@ int bq_init(struct _bq_t **bq, size_t size) {
 
 
 int bq_destroy(struct _bq_t *bq) {
-    if(pthread_cond_destroy(&(bq->cond)) != 0) {
-        perror("Failed to destroy cond variable");
+    if(pthread_cond_destroy(&bq->notEmpty) != 0) {
+        perror("Failed to destroy notEmpty cond variable");
         return 1;
     }
 
-    if(pthread_mutex_destroy(&(bq->mutex)) != 0) {
+    if(pthread_cond_destroy(&bq->notFull) != 0) {
+        perror("Failed to destroy notFull cond variable");
+        return 1;
+    }
+
+    if(pthread_mutex_destroy(&bq->mutex) != 0) {
         perror("Failed to destroy mutex");
         return 1;
     }
@@ -75,17 +93,17 @@ int bq_destroy(struct _bq_t *bq) {
 
 
 void bq_finished(struct _bq_t *bq) {
-    pthread_mutex_lock(&(bq->mutex));
+    pthread_mutex_lock(&bq->mutex);
     bq->finished = 1;
-    pthread_cond_broadcast(&(bq->cond));
-    pthread_mutex_unlock(&(bq->mutex));
+    pthread_cond_broadcast(&bq->notEmpty);
+    pthread_mutex_unlock(&bq->mutex);
 }
 
 
 int bq_enqueue(struct _bq_t *bq, void *ptr) {
-    pthread_mutex_lock(&(bq->mutex));
+    pthread_mutex_lock(&bq->mutex);
     while(bq->num_elements >= bq->size) {
-        pthread_cond_wait(&(bq->cond), &(bq->mutex));
+        pthread_cond_wait(&bq->notFull, &bq->mutex);
     }
     if(bq->tail == bq->queue + bq->size) {
         bq->tail = bq->queue;
@@ -93,20 +111,22 @@ int bq_enqueue(struct _bq_t *bq, void *ptr) {
     bq->tail[0] = ptr;
     bq->tail++;
     bq->num_elements++;
-    pthread_cond_signal(&(bq->cond));
-    pthread_mutex_unlock(&(bq->mutex));
+    pthread_cond_signal(&bq->notEmpty);
+    pthread_mutex_unlock(&bq->mutex);
     return 0;
 }
 
 
 int bq_dequeue(struct _bq_t *bq, void **ptr) {
-    pthread_mutex_lock(&(bq->mutex));
+    pthread_mutex_lock(&bq->mutex);
     while(bq->num_elements <= 0) {
+        // We want to burn through all remaining elements before returning due
+        // to the finish condition being set.
         if(bq->finished) {
-            pthread_mutex_unlock(&(bq->mutex));
+            pthread_mutex_unlock(&bq->mutex);
             return 1;
         }
-        pthread_cond_wait(&(bq->cond), &(bq->mutex));
+        pthread_cond_wait(&bq->notEmpty, &bq->mutex);
     }
     if(bq->head == bq->queue + bq->size) {
         bq->head = bq->queue;
@@ -114,7 +134,7 @@ int bq_dequeue(struct _bq_t *bq, void **ptr) {
     *ptr = bq->head[0];
     bq->head++;
     bq->num_elements--;
-    pthread_cond_signal(&(bq->cond));
-    pthread_mutex_unlock(&(bq->mutex));
+    pthread_cond_signal(&bq->notFull);
+    pthread_mutex_unlock(&bq->mutex);
     return 0;
 }
