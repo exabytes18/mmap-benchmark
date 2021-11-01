@@ -1,12 +1,13 @@
+*.bin
+*.csv
+*.o
 *.png
+*.tmp
 
-benchmarks/*.bin
-benchmarks/*.o
-benchmarks/random-access-benchmark
-benchmarks/sequential-access-benchmark
-benchmarks/output.csv
+random-access-benchmark
+sequential-access-benchmark
+benchmark
+hugetlb
 
-experiments/benchmark
-experiments/benchmark.bin
-experiments/hugetlb
-experiments/hugetlb.bin
+.DS_Store
+.idea/
