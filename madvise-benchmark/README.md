@@ -34,7 +34,7 @@ c5d.2xlarge:
 ![64 threads, Random Writes (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-64threads-random_writes.png)
 
 #### POSIX_MADV_WILLNEED, Random Writes (1 GiB file, 2 passes)
-![POSIX_MADV_WILLNEED, Random Writes (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_normal_posix_madv_willneed-random_writes.png)
+![POSIX_MADV_WILLNEED, Random Writes (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_willneed-random_writes.png)
 
 #### POSIX_MADV_NORMAL, Random Writes (1 GiB file, 2 passes)
 ![POSIX_MADV_NORMAL, Random Writes (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_normal-random_writes.png)
@@ -70,7 +70,7 @@ c5d.2xlarge:
 ![64 threads, Random Reads (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-64threads-random_reads.png)
 
 #### POSIX_MADV_WILLNEED, Random Reads (1 GiB file, 2 passes)
-![POSIX_MADV_WILLNEED, Random Reads (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_normal_posix_madv_willneed-random_reads.png)
+![POSIX_MADV_WILLNEED, Random Reads (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_willneed-random_reads.png)
 
 #### POSIX_MADV_NORMAL, Random Reads (1 GiB file, 2 passes)
 ![POSIX_MADV_NORMAL, Random Reads (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_normal-random_reads.png)
@@ -88,7 +88,7 @@ c5d.2xlarge:
 ![1 thread, Sequential Writes (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-1threads-seq_writes.png)
 
 #### POSIX_MADV_WILLNEED, Sequential Writes (1 GiB file, 2 passes)
-![POSIX_MADV_WILLNEED, Sequential Writes (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_normal_posix_madv_willneed-seq_writes.png)
+![POSIX_MADV_WILLNEED, Sequential Writes (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_willneed-seq_writes.png)
 
 #### POSIX_MADV_NORMAL, Sequential Writes (1 GiB file, 2 passes)
 ![POSIX_MADV_NORMAL, Sequential Writes (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_normal-seq_writes.png)
@@ -106,7 +106,7 @@ c5d.2xlarge:
 ![1 thread, Sequential Reads (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-1threads-seq_reads.png)
 
 #### POSIX_MADV_WILLNEED, Sequential Reads (1 GiB file, 2 passes)
-![POSIX_MADV_WILLNEED, Sequential Reads (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_normal_posix_madv_willneed-seq_reads.png)
+![POSIX_MADV_WILLNEED, Sequential Reads (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_willneed-seq_reads.png)
 
 #### POSIX_MADV_NORMAL, Sequential Reads (1 GiB file, 2 passes)
 ![POSIX_MADV_NORMAL, Sequential Reads (1 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/1073741824-2passes-posix_madv_normal-seq_reads.png)
@@ -144,7 +144,7 @@ c5d.2xlarge:
 ![64 threads, Random Writes (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-64threads-random_writes.png)
 
 #### POSIX_MADV_WILLNEED, Random Writes (32 GiB file, 2 passes)
-![POSIX_MADV_WILLNEED, Random Writes (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_normal_posix_madv_willneed-random_writes.png)
+![POSIX_MADV_WILLNEED, Random Writes (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_willneed-random_writes.png)
 
 #### POSIX_MADV_NORMAL, Random Writes (32 GiB file, 2 passes)
 ![POSIX_MADV_NORMAL, Random Writes (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_normal-random_writes.png)
@@ -180,7 +180,7 @@ c5d.2xlarge:
 ![64 threads, Random Reads (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-64threads-random_reads.png)
 
 #### POSIX_MADV_WILLNEED, Random Reads (32 GiB file, 2 passes)
-![POSIX_MADV_WILLNEED, Random Reads (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_normal_posix_madv_willneed-random_reads.png)
+![POSIX_MADV_WILLNEED, Random Reads (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_willneed-random_reads.png)
 
 #### POSIX_MADV_NORMAL, Random Reads (32 GiB file, 2 passes)
 ![POSIX_MADV_NORMAL, Random Reads (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_normal-random_reads.png)
@@ -198,7 +198,7 @@ c5d.2xlarge:
 ![1 thread, Sequential Writes (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-1threads-seq_writes.png)
 
 #### POSIX_MADV_WILLNEED, Sequential Writes (32 GiB file, 2 passes)
-![POSIX_MADV_WILLNEED, Sequential Writes (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_normal_posix_madv_willneed-seq_writes.png)
+![POSIX_MADV_WILLNEED, Sequential Writes (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_willneed-seq_writes.png)
 
 #### POSIX_MADV_NORMAL, Sequential Writes (32 GiB file, 2 passes)
 ![POSIX_MADV_NORMAL, Sequential Writes (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_normal-seq_writes.png)
@@ -216,7 +216,7 @@ c5d.2xlarge:
 ![1 thread, Sequential Reads (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-1threads-seq_reads.png)
 
 #### POSIX_MADV_WILLNEED, Sequential Reads (32 GiB file, 2 passes)
-![POSIX_MADV_WILLNEED, Sequential Reads (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_normal_posix_madv_willneed-seq_reads.png)
+![POSIX_MADV_WILLNEED, Sequential Reads (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_willneed-seq_reads.png)
 
 #### POSIX_MADV_NORMAL, Sequential Reads (32 GiB file, 2 passes)
 ![POSIX_MADV_NORMAL, Sequential Reads (32 GiB file, 2 passes)](http://static.laazy.com/mmap-benchmark/4/34359738368-2passes-posix_madv_normal-seq_reads.png)
